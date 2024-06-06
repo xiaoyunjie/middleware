@@ -1,0 +1,89 @@
+version: "3"
+services:
+  nacos:
+    image: registry.secs.net.cn/library/nacos-server:v2.2.3
+    container_name: nacos
+    restart: always
+    ports:
+      - 8848:8848
+      - 9848:9848
+      - 9849:9849
+    environment:
+      TZ: Asia/Shanghai
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: nacos-mysql
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_USER: nacos
+      MYSQL_SERVICE_PASSWORD: nacos
+      MYSQL_SERVICE_DB_NAME: nacos_config
+      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=10000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      JVM_XMS: 512m
+      JVM_XMX: 512m
+      JVM_XMN: 192m
+    volumes:
+      - ./service/nacos/logs:/home/nacos/logs
+      - ./service/nacos/conf/application.properties:/home/nacos/conf/application.properties
+    depends_on:
+      - nacos-mysql
+
+  nacos-mysql:
+    image: registry.secs.net.cn/library/mysql:v8.0.21
+    restart: always
+    container_name: nacos-mysql
+    volumes:
+      - ./service/mysql/data:/var/lib/mysql
+      - ./service/mysql/conf:/etc/mysql/conf.d
+      - ./service/mysql/nacos_mysql_init:/docker-entrypoint-initdb.d
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+#    entrypoint: bash -c "chown -R mysql:mysql /var/log/mysql && exec /entrypoint.sh mysqld"
+    environment:
+      MYSQL_ROOT_PASSWORD: "gfzx@123"
+      MYSQL_USER: "nacos"
+      MYSQL_PASSWORD: "nacos"
+      MYSQL_DATABASE: "nacos_config"
+      TZ: Asia/Shanghai
+    privileged: true
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: registry.secs.net.cn/library/redis:v6.2.13-alpine
+    container_name: redis
+    restart: on-failure
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./service/redis/data:/data
+      - ./service/redis/conf/redis.conf:/etc/redis/redis.conf
+      - ./service/redis/logs:/logs
+    sysctls:
+      - net.core.somaxconn=1024
+   #  - vm.overcommit_memory=1
+    command: /bin/sh -c "echo 'vm.overcommit_memory = 1' >> /etc/sysctl.conf
+            && redis-server /etc/redis/redis.conf"
+    privileged: true
+    ports:
+      - "6379:6379"
+
+  minio:
+    image: registry.secs.net.cn/library/minio:RELEASE.2024-01-18T22-51-28Z
+    container_name: minio
+    restart: always
+    environment:
+      MINIO_ACCESS_KEY: admin    #管理后台用户名
+      MINIO_SECRET_KEY: gfzx@123 #管理后台密码，最小8个字符
+    volumes:
+      - ./service/minio/data:/data               #映射当前目录下的data目录至容器内/data目录
+      - ./service/minio/config:/root/.minio/     #映射配置目录
+    command: server --console-address ':9001' /data  #指定容器中的目录 /data
+    privileged: true
+    ports:
+      - "9000:9000" # api 端口
+      - "9001:9001" # 控制台端口
+
