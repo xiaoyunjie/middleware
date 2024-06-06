@@ -1,7 +1,7 @@
 version: "3"
 services:
   nacos:
-    image: registry.secs.net.cn/library/nacos-server:v2.2.3
+    image: nacos-server:v2.2.3
     container_name: nacos
     restart: always
     ports:
@@ -28,7 +28,7 @@ services:
       - nacos-mysql
 
   nacos-mysql:
-    image: registry.secs.net.cn/library/mysql:v8.0.21
+    image: mysql:v8.0.21
     restart: always
     container_name: nacos-mysql
     volumes:
@@ -43,7 +43,7 @@ services:
       --lower_case_table_names=1
 #    entrypoint: bash -c "chown -R mysql:mysql /var/log/mysql && exec /entrypoint.sh mysqld"
     environment:
-      MYSQL_ROOT_PASSWORD: "gfzx@123"
+      MYSQL_ROOT_PASSWORD: "abcd@123"
       MYSQL_USER: "nacos"
       MYSQL_PASSWORD: "nacos"
       MYSQL_DATABASE: "nacos_config"
@@ -53,7 +53,7 @@ services:
       - "3306:3306"
 
   redis:
-    image: registry.secs.net.cn/library/redis:v6.2.13-alpine
+    image: redis:v6.2.13-alpine
     container_name: redis
     restart: on-failure
     environment:
@@ -72,12 +72,12 @@ services:
       - "6379:6379"
 
   minio:
-    image: registry.secs.net.cn/library/minio:RELEASE.2024-01-18T22-51-28Z
+    image: minio:RELEASE.2024-01-18T22-51-28Z
     container_name: minio
     restart: always
     environment:
       MINIO_ACCESS_KEY: admin    #管理后台用户名
-      MINIO_SECRET_KEY: gfzx@123 #管理后台密码，最小8个字符
+      MINIO_SECRET_KEY: abcd@123 #管理后台密码，最小8个字符
     volumes:
       - ./service/minio/data:/data               #映射当前目录下的data目录至容器内/data目录
       - ./service/minio/config:/root/.minio/     #映射配置目录
